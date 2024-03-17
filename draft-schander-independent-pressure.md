@@ -9,19 +9,19 @@ number:
 date:
 consensus: false
 v: 3
-area: AREA
-workgroup: WG Working Group
+# area: AREA
+# workgroup: WG Working Group
 keyword:
  - next generation
  - unicorn
  - sparkling distributed ledger
 venue:
-  group: WG
-  type: Working Group
-  mail: WG@example.com
-  arch: https://example.com/WG
-  github: USER/REPO
-  latest: https://example.com/LATEST
+#  group: WG
+#  type: Working Group
+#  mail: WG@example.com
+#  arch: https://example.com/WG
+  github: "dequbed/draft-schander-independent-pressure"
+  latest: "https://dequbed.github.io/draft-schander-independent-pressure/draft-schander-independent-pressure.html"
 
 author:
  -
