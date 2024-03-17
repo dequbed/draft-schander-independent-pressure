@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Open PRESSURE — PRofile Exchange Standard and Service Used for Regular Espresso</title>
+<meta content="Johanna Schander" name="author">
+<meta content="Nadja von Reitzenstein Čerpnjak" name="author">
+<meta content="
+       The  Open Espresso Profile Format (OEPF) utilizes JSON to encode detailed instructions for the espresso brewing process,
+allowing users to specify temperatures, pressures, flow rates, and more. The profile does encode a deterministic finite atomaton
+at the current stage but is intended to be extended with an additional Domain Specific Language (DSL) in the future which
+will allow for full turing completeness in the profile brewing process.
+This document delineates the OPFS's structure, including the rationale behind each component's design and provides guidelines on how espresso machines should interpret and execute these profiles.
+The OEPF documentation, schema and sample code are licences under the GNU General Public License Version 3 and all text and code implementing, tranforming, analysing or providing schemas or profiles are to be considered derived works and to be released under the same licence. Impossible to enforce, needs a copyrighted logo and a foundation allowing use of that logo only if that license is followed. 
+    " name="description">
+<meta content="xml2rfc 3.20.1" name="generator">
+<meta content="next generation" name="keyword">
+<meta content="unicorn" name="keyword">
+<meta content="sparkling distributed ledger" name="keyword">
+<meta content="draft-schander-independent-pressure-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.20.1
+    Python 3.11.8
+    ConfigArgParse 1.7
+    google-i18n-address 3.1.0
+    intervaltree 3.1.0
+    Jinja2 3.1.3
+    lxml 4.9.4
+    platformdirs 4.2.0
+    pycountry 23.12.11
+    PyYAML 6.0.1
+    requests 2.31.0
+    setuptools 69.2.0
+    six 1.16.0
+    wcwidth 0.2.13
+-->
+<link href="draft-schander-independent-pressure.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1#title, h1#rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+h1#rfcnum + h1#title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+}
+#abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 16px;
+  line-height: 0;
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+/* font-family isn't space-separated, but =~ will have to do */
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+}
+:is(ol, ul) :is(ol, ul) {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  line-height: 1;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+}
+dl.olPercent {
+  --indent: 5ch;
+}
+dl > dt {
+  float: left;
+  margin-right: 2ch;
+  min-width: 8ch;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+dl > dd {
+  margin-bottom: .8em;
+  margin-left: var(--indent) !important; /* stupid element overrides */
+  min-height: 2ex;
+}
+dl.olPercent > dt {
+  min-width: calc(var(--indent) - 2ch);
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:first-child, .break:first-child + *) {
+  margin-top: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:last-child) {
+  margin-bottom: 0;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href].selfRef, .iref + a[href].internal {
+  color: var(--text-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
+  pre, svg {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+}
+a.pilcrow[href] { color: var(--pilcrow-weak); }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media not print {
+  :hover > a.pilcrow {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  min-width: var(--identifier-width);
+  clear: left;
+  float: left;
+  text-align: right;
+  margin-right: 1ch;
+}
+#identifiers dd {
+  margin: 0;
+  margin-left: calc(1em + var(--identifier-width)) !important;
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 2px 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+#toc a.xref {
+  white-space: normal;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 10ch;
+  margin-right: 1.5ch;
+}
+.references dt:target::before {
+  content: "⇒";
+  width: 15px;
+  margin: 0 10px 0 -25px;
+}
+.references dd {
+  margin-left: 12ch !important;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul :is(p, li) {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+  .toplink {
+    display: none;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Provide styling for table cell text alignment */
+table .text-left {
+  text-align: left;
+}
+table .text-center {
+  text-align: center;
+}
+table .text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+  stroke: var(--text-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+  stroke: var(--background-color);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+  fill: var(--text-color);
+}
+svg :is([fill="white"], [fill^="#fff"]) {
+  fill: var(--background-color);
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">Open PRESSURE</td>
+<td class="right">March 2024</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Schander &amp; von Reitzenstein Čerpnjak</td>
+<td class="center">Expires 18 September 2024</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Network Working Group</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-schander-independent-pressure-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2024-03-17" class="published">17 March 2024</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2024-09-18">18 September 2024</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">J. A. Schander</div>
+<div class="org">Meticulous</div>
+</div>
+<div class="author">
+      <div class="author-name">N. von Reitzenstein Čerpnjak, <span class="editor">Ed.</span>
+</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Open PRESSURE — PRofile Exchange Standard and Service Used for Regular Espresso</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">The  Open Espresso Profile Format (OEPF) utilizes JSON to encode detailed instructions for the espresso brewing process,
+allowing users to specify temperatures, pressures, flow rates, and more. The profile does encode a deterministic finite atomaton
+at the current stage but is intended to be extended with an additional Domain Specific Language (DSL) in the future which
+will allow for full turing completeness in the profile brewing process.
+This document delineates the OPFS's structure, including the rationale behind each component's design and provides guidelines on how espresso machines should interpret and execute these profiles.
+The OEPF documentation, schema and sample code are licences under the GNU General Public License Version 3 and all text and code implementing, tranforming, analysing or providing schemas or profiles are to be considered derived works and to be released under the same licence.<span class="cref" id="_1">Impossible to enforce, needs a copyrighted logo and a foundation allowing use of that logo only if that license is followed.<span class="crefSource">nadja</span></span><a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<section class="note rfcEditorRemove" id="section-note.1">
+      <h2 id="name-about-this-document">
+<a href="#name-about-this-document" class="section-name selfRef">About This Document</a>
+      </h2>
+<p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
+<p id="section-note.1-2">
+        The latest revision of this draft can be found at <span><a href="https://dequbed.github.io/draft-schander-independent-pressure/draft-schander-independent-pressure.html">https://dequbed.github.io/draft-schander-independent-pressure/draft-schander-independent-pressure.html</a></span>.
+        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-schander-independent-pressure/">https://datatracker.ietf.org/doc/draft-schander-independent-pressure/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">Source for this draft and an issue tracker can be found at
+        <span><a href="https://github.com/dequbed/draft-schander-independent-pressure">https://github.com/dequbed/draft-schander-independent-pressure</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 18 September 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2024 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-conventions-and-definitions" class="internal xref">Conventions and Definitions</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-definitions-used-in-this-do" class="internal xref">Definitions used in this document</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-capabilities-of-espresso-ma" class="internal xref">Capabilities of Espresso Machines</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.1">
+                    <p id="section-toc.1-1.2.2.2.2.1.1" class="keepWithNext"><a href="#section-2.2.1" class="auto internal xref">2.2.1</a>.  <a href="#name-the-decent-espresso-machine" class="internal xref">The Decent Espresso Machine</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.2">
+                    <p id="section-toc.1-1.2.2.2.2.2.1"><a href="#section-2.2.2" class="auto internal xref">2.2.2</a>.  <a href="#name-the-meticulous-espresso-mac" class="internal xref">The Meticulous Espresso Machine</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2.2.3">
+                    <p id="section-toc.1-1.2.2.2.2.3.1"><a href="#section-2.2.3" class="auto internal xref">2.2.3</a>.  <a href="#name-gaggiuino" class="internal xref">Gaggiuino</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.3">
+                <p id="section-toc.1-1.2.2.3.1"><a href="#section-2.3" class="auto internal xref">2.3</a>.  <a href="#name-design-considerations" class="internal xref">Design considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.3.2.1">
+                    <p id="section-toc.1-1.2.2.3.2.1.1"><a href="#section-2.3.1" class="auto internal xref">2.3.1</a>.  <a href="#name-handling-incompatibilities-" class="internal xref">Handling Incompatibilities in Machine Capabilities</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-profile-structure" class="internal xref">Profile Structure</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-name" class="internal xref">Name</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-id" class="internal xref">ID</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.1">
+                    <p id="section-toc.1-1.3.2.2.2.1.1"><a href="#section-3.2.1" class="auto internal xref">3.2.1</a>.  <a href="#name-author-and-author-id" class="internal xref">Author and Author ID</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.2">
+                    <p id="section-toc.1-1.3.2.2.2.2.1"><a href="#section-3.2.2" class="auto internal xref">3.2.2</a>.  <a href="#name-previous-authors" class="internal xref">Previous Authors</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.3">
+                    <p id="section-toc.1-1.3.2.2.2.3.1"><a href="#section-3.2.3" class="auto internal xref">3.2.3</a>.  <a href="#name-temperature-and-final-weigh" class="internal xref">Temperature and Final Weight</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.4">
+                    <p id="section-toc.1-1.3.2.2.2.4.1"><a href="#section-3.2.4" class="auto internal xref">3.2.4</a>.  <a href="#name-variables" class="internal xref">Variables</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.5">
+                    <p id="section-toc.1-1.3.2.2.2.5.1"><a href="#section-3.2.5" class="auto internal xref">3.2.5</a>.  <a href="#name-fields-within-a-variable-en" class="internal xref">Fields Within a Variable entry</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.6">
+                    <p id="section-toc.1-1.3.2.2.2.6.1"><a href="#section-3.2.6" class="auto internal xref">3.2.6</a>.  <a href="#name-utilizing-variables-in-brew" class="internal xref">Utilizing Variables in Brewing Execution</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.7">
+                    <p id="section-toc.1-1.3.2.2.2.7.1"><a href="#section-3.2.7" class="auto internal xref">3.2.7</a>.  <a href="#name-stages" class="internal xref">Stages</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.8">
+                    <p id="section-toc.1-1.3.2.2.2.8.1"><a href="#section-3.2.8" class="auto internal xref">3.2.8</a>.  <a href="#name-fields-within-a-stage" class="internal xref">Fields Within a Stage</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="auto internal xref">3.3</a>.  <a href="#name-execution-of-profiles" class="internal xref">Execution of Profiles</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-future-extensions" class="internal xref">Future Extensions</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-appendix-a-example-profile" class="internal xref">Appendix A: Example Profile</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-appendix-b-json-schema-desc" class="internal xref">Appendix B: JSON Schema describing the OEPD</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">This document describes the standardized format for espresso brewing profiles known as the Open Espresso Profile Format (OEPF)<span class="cref" id="_2">Redundant naming, should just describe what this is about<span class="crefSource">nadja</span></span>,
+intended for use in programmable espresso machines. This document provides a current draft of the endavours to combine multiple
+commercial and internet community based approaches to coffee profiles.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">The development of the OEPF aims to bridge the gap between espresso brewing artistry and machine automation,
+providing a means for enthusiasts and professionals alike to share and replicate espresso brewing recipies.
+By defining a clear and detailed structure for brewing profiles, the OEPF ensures compatibility and repeatability
+across different devices, skyrocketing the collaboration and innovation of espresso brewing.<a href="#section-1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="conventions-and-definitions">
+<section id="section-2">
+      <h2 id="name-conventions-and-definitions">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-conventions-and-definitions" class="section-name selfRef">Conventions and Definitions</a>
+      </h2>
+<p id="section-2-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<div id="definitions-used-in-this-document">
+<section id="section-2.1">
+        <h3 id="name-definitions-used-in-this-do">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-definitions-used-in-this-do" class="section-name selfRef">Definitions used in this document</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="section-2.1-1.1">
+            <p id="section-2.1-1.1.1"><strong>Espresso</strong>: A full-flavored, concentrated form of coffee served in "shots." It's made by forcing pressurized hot water through very finely ground coffee beans using an espresso machine.<a href="#section-2.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.2">
+            <p id="section-2.1-1.2.1"><strong>Espresso Shot</strong>: A concentrated coffee beverage brewed by forcing a small amount of nearly boiling water through finely-ground coffee beans.<a href="#section-2.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.3">
+            <p id="section-2.1-1.3.1"><strong>Brew</strong>: The process of making coffee by steeping coffee grounds in hot water. In the context of espresso, it refers to the act of creating the espresso shot.<a href="#section-2.1-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.4">
+            <p id="section-2.1-1.4.1"><strong>Brew Ratio</strong>: The ratio of coffee to water used in brewing an espresso shot, which significantly affects the flavor and strength of the espresso. Common ratios include 1:1 for ristrettos, 1:2 for standard espresso shots, and 1:3 for lungos.<a href="#section-2.1-1.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.5">
+            <p id="section-2.1-1.5.1"><strong>Profile</strong>: A comprehensive set of instructions for brewing espresso, structured as JSON and described in this document.<a href="#section-2.1-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.6">
+            <p id="section-2.1-1.6.1"><strong>Stage</strong>: A discrete phase in the espresso brewing process, defined within a profile with specific parameters and conditions.<a href="#section-2.1-1.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.7">
+            <p id="section-2.1-1.7.1"><strong>Variable</strong>: A named parameter within a profile that can be adjusted and referenced by stages.<a href="#section-2.1-1.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.8">
+            <p id="section-2.1-1.8.1"><strong>Exit Trigger</strong>: A condition defined within a stage that, when met, signals the transition to the next stage.<a href="#section-2.1-1.8.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.9">
+            <p id="section-2.1-1.9.1"><strong>Limits</strong>: Constraints applied to stages to prevent exceeding specific parameter values.<a href="#section-2.1-1.9.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.10">
+            <p id="section-2.1-1.10.1"><strong>UUID</strong>: Universally Unique Identifier, utilized for ensuring global uniqueness across profiles and authors.<a href="#section-2.1-1.10.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-1.11">
+            <p id="section-2.1-1.11.1"><strong>JSON</strong>: JavaScript Object Notation, a lightweight format for data interchange.<a href="#section-2.1-1.11.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="capabilities-of-espresso-machines">
+<section id="section-2.2">
+        <h3 id="name-capabilities-of-espresso-ma">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-capabilities-of-espresso-ma" class="section-name selfRef">Capabilities of Espresso Machines</a>
+        </h3>
+<p id="section-2.2-1">The development of the OEPF took into consideration the advanced capabilities of specific espresso machines, recognizing their unique features that significantly influence brewing techniques and outcomes. Among these, the following workgroups were influencial to this document:
+- Decent Espresso
+- Meticulous Home
+- Gaggiuino<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<div id="the-decent-espresso-machine">
+<section id="section-2.2.1">
+          <h4 id="name-the-decent-espresso-machine">
+<a href="#section-2.2.1" class="section-number selfRef">2.2.1. </a><a href="#name-the-decent-espresso-machine" class="section-name selfRef">The Decent Espresso Machine</a>
+          </h4>
+<p id="section-2.2.1-1">Decent Espresso Machines are renowned for their ability to precisely control temperature throughout the brewing process. This capability allows for temperature profiling, where the water temperature can be adjusted dynamically as the espresso shot is pulled. This feature is crucial for extracting the full range of flavors from the coffee, as different compounds are more soluble at different temperatures.<a href="#section-2.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.1-2">Special Capabilities:
+    - make use of the temperature_delta field within the stages<a href="#section-2.2.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="the-meticulous-espresso-machine">
+<section id="section-2.2.2">
+          <h4 id="name-the-meticulous-espresso-mac">
+<a href="#section-2.2.2" class="section-number selfRef">2.2.2. </a><a href="#name-the-meticulous-espresso-mac" class="section-name selfRef">The Meticulous Espresso Machine</a>
+          </h4>
+<p id="section-2.2.2-1">The Meticulous Espresso Machine, on the other hand, distinguishes itself with its ability to control the relative power of the piston. This level of control over the piston's power allows for nuanced adjustments to the pressure profile, directly affecting the extraction rate and flavor profile of the espresso shot.<a href="#section-2.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2.2-2">Special Capabilities:
+    - ability to use piston position as an additional sensor value<a href="#section-2.2.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="gaggiuino">
+<section id="section-2.2.3">
+          <h4 id="name-gaggiuino">
+<a href="#section-2.2.3" class="section-number selfRef">2.2.3. </a><a href="#name-gaggiuino" class="section-name selfRef">Gaggiuino</a>
+          </h4>
+<p id="section-2.2.3-1">Gaggiuino is an innovative project that enhances Gaggia Classic espresso machines with modern technology. On top of the original machines Gaggiuino adds precise temperature control, pressure profiling, and pre-infusion timing through a user-friendly interface, effectively retrofitting these beloved classic machines with features typically found in high-end models.<a href="#section-2.2.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="design-considerations">
+<section id="section-2.3">
+        <h3 id="name-design-considerations">
+<a href="#section-2.3" class="section-number selfRef">2.3. </a><a href="#name-design-considerations" class="section-name selfRef">Design considerations</a>
+        </h3>
+<p id="section-2.3-1">The inclusion of different machines with vastely different capabilities into the design considerations of the OEPF highlights the specification's adaptability to both factory-designed capabilities and community-driven innovations. By accommodating all the enhanced features provided by the different projects OEPF ensures a wide applicability, not only bridging the gap between traditional espresso machines and the desires of the modern coffee enthusiast for precision and control but also vaporizing the idea of a walled garden per machine ecosystem.<a href="#section-2.3-1" class="pilcrow">¶</a></p>
+<div id="handling-incompatibilities-in-machine-capabilities">
+<section id="section-2.3.1">
+          <h4 id="name-handling-incompatibilities-">
+<a href="#section-2.3.1" class="section-number selfRef">2.3.1. </a><a href="#name-handling-incompatibilities-" class="section-name selfRef">Handling Incompatibilities in Machine Capabilities</a>
+          </h4>
+<p id="section-2.3.1-1">Not all machines will be capable of executing every type of stage defined in a profile due to hardware or software limitations.
+For example, a machine may not support precise control over certain variables like the piston position or the lever motor power as
+not all machines are motorized leaver machines. In these cases, the machine should:<a href="#section-2.3.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.3.1-2.1">
+              <p id="section-2.3.1-2.1.1"><strong>Provide interpretation fallback</strong> if it can accomplish the idea of the stage but at a lower precision or with a slightly different outcome. The user should be informed of this during import.<a href="#section-2.3.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.3.1-2.2">
+              <p id="section-2.3.1-2.2.1"><strong>Approximate stages</strong> within its capabilities, adjusting parameters to the closest possible values and notifying the user of the modifications.<a href="#section-2.3.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-2.3.1-2.3">
+              <p id="section-2.3.1-2.3.1"><strong>Halt import execution</strong> if a stage is critical to the profile's integrity and cannot be approximated, alerting the user to the inability to proceed. This might be a stage where the temperature difference between the stages is substantially significant while the machine doesn't provide any temperature profiling capabilities. It should ensure it is aborting not just a tweak of the reciples core idea but the main idea of the recipe.<a href="#section-2.3.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="profile-structure">
+<section id="section-3">
+      <h2 id="name-profile-structure">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-profile-structure" class="section-name selfRef">Profile Structure</a>
+      </h2>
+<p id="section-3-1">The OEPF structure is intentionally designed to encapsulate the complexity of espresso brewing in a format that is both flexible and precise. Below, we explore the rationale behind key elements of the profile structure.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<div id="name">
+<section id="section-3.1">
+        <h3 id="name-name">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-name" class="section-name selfRef">Name</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="section-3.1-1.1">
+            <p id="section-3.1-1.1.1"><strong>Purpose</strong>: Facilitates easy identification and comparison of profiles.<a href="#section-3.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-3.1-1.2">
+            <p id="section-3.1-1.2.1"><strong>Design Decision</strong>: Keeping the name non-unique allows for creative freedom and ease in organizing profiles.<a href="#section-3.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="id">
+<section id="section-3.2">
+        <h3 id="name-id">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-id" class="section-name selfRef">ID</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="section-3.2-1.1">
+            <p id="section-3.2-1.1.1"><strong>Purpose</strong>: Ensures distinct identification of each profile.<a href="#section-3.2-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-3.2-1.2">
+            <p id="section-3.2-1.2.1"><strong>Design Decision</strong>: UUID-v4 is chosen for its global uniqueness, crucial for sharing and versioning profiles.<a href="#section-3.2-1.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<div id="author-and-author-id">
+<section id="section-3.2.1">
+          <h4 id="name-author-and-author-id">
+<a href="#section-3.2.1" class="section-number selfRef">3.2.1. </a><a href="#name-author-and-author-id" class="section-name selfRef">Author and Author ID</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.1-1.1">
+              <p id="section-3.2.1-1.1.1"><strong>Purpose</strong>: Credits the profile's creator and tracks ownership.<a href="#section-3.2.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.1-1.2">
+              <p id="section-3.2.1-1.2.1"><strong>Design Decision</strong>: Combining a readable name with a UUID ensures clarity in attribution and supports a system of rights management.<a href="#section-3.2.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="previous-authors">
+<section id="section-3.2.2">
+          <h4 id="name-previous-authors">
+<a href="#section-3.2.2" class="section-number selfRef">3.2.2. </a><a href="#name-previous-authors" class="section-name selfRef">Previous Authors</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.2-1.1">
+              <p id="section-3.2.2-1.1.1"><strong>Purpose</strong>: Maintains a record of contributions and changes over time.<a href="#section-3.2.2-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.2-1.2">
+              <p id="section-3.2.2-1.2.1"><strong>Design Decision</strong>: An array of previous authors supports transparency and collaboration, encouraging the evolution of profiles.<a href="#section-3.2.2-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="temperature-and-final-weight">
+<section id="section-3.2.3">
+          <h4 id="name-temperature-and-final-weigh">
+<a href="#section-3.2.3" class="section-number selfRef">3.2.3. </a><a href="#name-temperature-and-final-weigh" class="section-name selfRef">Temperature and Final Weight</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.3-1.1">
+              <p id="section-3.2.3-1.1.1"><strong>Purpose</strong>: Defines key brewing parameters.<a href="#section-3.2.3-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="variables">
+<section id="section-3.2.4">
+          <h4 id="name-variables">
+<a href="#section-3.2.4" class="section-number selfRef">3.2.4. </a><a href="#name-variables" class="section-name selfRef">Variables</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.4-1.1">
+              <p id="section-3.2.4-1.1.1"><strong>Purpose</strong>: Introduces flexibility within profiles.<a href="#section-3.2.4-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.4-1.2">
+              <p id="section-3.2.4-1.2.1"><strong>Design Decision</strong>: Variables within a coffee brewing profile serve as customizable parameters that can be referenced and are injected across different stages of the brewing process. They also provide a flexible mechanism for adjusting the brewing parameters dynamically between shots in minimal editors. They can be used in the stages dynamics points, exit triggers and limiters.<a href="#section-3.2.4-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="fields-within-a-variable-entry">
+<section id="section-3.2.5">
+          <h4 id="name-fields-within-a-variable-en">
+<a href="#section-3.2.5" class="section-number selfRef">3.2.5. </a><a href="#name-fields-within-a-variable-en" class="section-name selfRef">Fields Within a Variable entry</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.1">
+              <p id="section-3.2.5-1.1.1"><strong>name</strong>: Serves as a descriptive and easily recognizable identifier for the variable. It is used within the user interface (UI) of the coffee machine or profile editing tools to present a readable name that users can associate with a specific parameter or setting. The name should be unique within the profile to avoid confusion.<a href="#section-3.2.5-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.5-1.2">
+              <p id="section-3.2.5-1.2.1"><strong>key</strong>: Acts as a unique identifier for the variable within the scope of the profile. It is crucial for programmatically referencing and manipulating the variable's value during the brewing process. The key must be unique across all variables defined in the profile to ensure that each variable can be distinctly identified and accessed.<a href="#section-3.2.5-1.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.5-1.3">
+              <p id="section-3.2.5-1.3.1"><strong>type</strong>: Specifies the category or nature of the variable, indicating what aspect of the brewing process it controls or influences. The type is defined as an enumeration (enum) that includes options such as "power," "flow," and "pressure." This categorization helps the brewing engine understand how to interpret the variable's value and apply it to control the machine's components accordingly.<a href="#section-3.2.5-1.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.5-1.4">
+              <p id="section-3.2.5-1.4.1"><strong>type</strong>: Specifies the category or nature of the variable, indicating what aspect of the brewing process it controls or influences. The type is defined as an enumeration (enum) that includes options such as "power," "flow," and "pressure" among others. This categorization helps a potential UI to understand how to interpret the variable's value and expose it to the user for manipulation.<a href="#section-3.2.5-1.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.1">
+                  <p id="section-3.2.5-1.4.2.1.1"><strong>time</strong>: Measures time intervals within the brewing process.<a href="#section-3.2.5-1.4.2.1.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.1.2.1">
+                      <p id="section-3.2.5-1.4.2.1.2.1.1"><strong>Range</strong>: 0 to TBD (180s to 24h)<a href="#section-3.2.5-1.4.2.1.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.1.2.2">
+                      <p id="section-3.2.5-1.4.2.1.2.2.1"><strong>Resolution</strong>: 0.1 seconds<a href="#section-3.2.5-1.4.2.1.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+                <li class="normal" id="section-3.2.5-1.4.2.2">
+                  <p id="section-3.2.5-1.4.2.2.1"><strong>weight</strong>: Tracks the weight of coffee output or input materials.<a href="#section-3.2.5-1.4.2.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.2.2.1">
+                      <p id="section-3.2.5-1.4.2.2.2.1.1"><strong>Range</strong>: 0 to 2000g<a href="#section-3.2.5-1.4.2.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.2.2.2">
+                      <p id="section-3.2.5-1.4.2.2.2.2.1"><strong>Resolution</strong>: 0.1 grams<a href="#section-3.2.5-1.4.2.2.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+                <li class="normal" id="section-3.2.5-1.4.2.3">
+                  <p id="section-3.2.5-1.4.2.3.1"><strong>pressure</strong>: Indicates the water pressure used during extraction.<a href="#section-3.2.5-1.4.2.3.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.3.2.1">
+                      <p id="section-3.2.5-1.4.2.3.2.1.1"><strong>Range</strong>: 0 to 12 bar<a href="#section-3.2.5-1.4.2.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.3.2.2">
+                      <p id="section-3.2.5-1.4.2.3.2.2.1"><strong>Resolution</strong>: 0.1 bar<a href="#section-3.2.5-1.4.2.3.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+                <li class="normal" id="section-3.2.5-1.4.2.4">
+                  <p id="section-3.2.5-1.4.2.4.1"><strong>flow</strong>: Measures the rate at which water flows through the coffee grounds.<a href="#section-3.2.5-1.4.2.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.4.2.1">
+                      <p id="section-3.2.5-1.4.2.4.2.1.1"><strong>Range</strong>: 0 to 12 bar<a href="#section-3.2.5-1.4.2.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.4.2.2">
+                      <p id="section-3.2.5-1.4.2.4.2.2.1"><strong>Resolution</strong>: 0.1 bar<a href="#section-3.2.5-1.4.2.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+                <li class="normal" id="section-3.2.5-1.4.2.5">
+                  <p id="section-3.2.5-1.4.2.5.1"><strong>piston_position</strong>: Represents the position of a lever or piston in machines.<a href="#section-3.2.5-1.4.2.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.5.2.1">
+                      <p id="section-3.2.5-1.4.2.5.2.1.1"><strong>Range</strong>: 0 to 100%<a href="#section-3.2.5-1.4.2.5.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.5.2.2">
+                      <p id="section-3.2.5-1.4.2.5.2.2.1"><strong>Resolution</strong>: 1%<a href="#section-3.2.5-1.4.2.5.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+                <li class="normal" id="section-3.2.5-1.4.2.6">
+                  <p id="section-3.2.5-1.4.2.6.1"><strong>temperature</strong>: Specifies the water temperature for brewing.<a href="#section-3.2.5-1.4.2.6.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.6.2.1">
+                      <p id="section-3.2.5-1.4.2.6.2.1.1"><strong>Range</strong>: 0 to 150°C or 99°C for machines with ambient pressure heating<a href="#section-3.2.5-1.4.2.6.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.6.2.2">
+                      <p id="section-3.2.5-1.4.2.6.2.2.1"><strong>Resolution</strong>: 0.1°C<a href="#section-3.2.5-1.4.2.6.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+                <li class="normal" id="section-3.2.5-1.4.2.7">
+                  <p id="section-3.2.5-1.4.2.7.1"><strong>power</strong>: Relates to the electrical power used by the machine's lever actuator.<a href="#section-3.2.5-1.4.2.7.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.5-1.4.2.7.2.1">
+                      <p id="section-3.2.5-1.4.2.7.2.1.1"><strong>Range</strong>: 0 to 100%<a href="#section-3.2.5-1.4.2.7.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                    <li class="normal" id="section-3.2.5-1.4.2.7.2.2">
+                      <p id="section-3.2.5-1.4.2.7.2.2.1"><strong>Resolution</strong>: 1%<a href="#section-3.2.5-1.4.2.7.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  </ul>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.2.5-1.5">
+              <p id="section-3.2.5-1.5.1"><strong>value</strong>: The actual setting or magnitude assigned to the variable, represented as a numeric value without unit.<a href="#section-3.2.5-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="utilizing-variables-in-brewing-execution">
+<section id="section-3.2.6">
+          <h4 id="name-utilizing-variables-in-brew">
+<a href="#section-3.2.6" class="section-number selfRef">3.2.6. </a><a href="#name-utilizing-variables-in-brew" class="section-name selfRef">Utilizing Variables in Brewing Execution</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.6-1.1">
+              <p id="section-3.2.6-1.1.1">In the dynamics of a stage, variables can define target values across stage bounderies and to hit certain target key performances<a href="#section-3.2.6-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.6-1.2">
+              <p id="section-3.2.6-1.2.1">Exit triggers may use variables to determine when a stage should end, such as reaching a certain pressure or flow rate which<a href="#section-3.2.6-1.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.6-1.3">
+              <p id="section-3.2.6-1.3.1">Limits ensure that the brewing process adheres to safety and quality constraints by capping the pressure and/or flow.<a href="#section-3.2.6-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+<p id="section-3.2.6-2">Variables are to be set prior to the start of the brewing process and can therefore be preprocessed in higher programming languages then what might be used for the profile execution engine.<a href="#section-3.2.6-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="stages">
+<section id="section-3.2.7">
+          <h4 id="name-stages">
+<a href="#section-3.2.7" class="section-number selfRef">3.2.7. </a><a href="#name-stages" class="section-name selfRef">Stages</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.7-1.1">
+              <p id="section-3.2.7-1.1.1"><strong>Purpose</strong>: Describes the brewing process in detail.<a href="#section-3.2.7-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.7-1.2">
+              <p id="section-3.2.7-1.2.1"><strong>Design Decision</strong>: The structured approach to stages, including dynamics, exit triggers, and limits, provides a comprehensive control mechanism over the brewing sequence. In most cases customers want the machine to do only one (visible) task at a time. As power, pressure and flow are dependant on each other allowing the control of multiple of these at once is non beneficitial. It was therefore chose to stick to the tried and true "one stage at a time"-approach.<a href="#section-3.2.7-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="fields-within-a-stage">
+<section id="section-3.2.8">
+          <h4 id="name-fields-within-a-stage">
+<a href="#section-3.2.8" class="section-number selfRef">3.2.8. </a><a href="#name-fields-within-a-stage" class="section-name selfRef">Fields Within a Stage</a>
+          </h4>
+<ul class="normal">
+<li class="normal" id="section-3.2.8-1.1">
+              <p id="section-3.2.8-1.1.1"><strong>name</strong>: A human-readable identifier for the stage. It helps users and developers understand the purpose and sequence of the brewing process.<a href="#section-3.2.8-1.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.8-1.2">
+              <p id="section-3.2.8-1.2.1"><strong>key</strong>: A unique identifier for the stage within the profile. It facilitates referencing and managing stages programmatically, ensuring that actions and logs can be accurately associated with the correct stage of the process.<a href="#section-3.2.8-1.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.8-1.3">
+              <p id="section-3.2.8-1.3.1"><strong>type</strong>: Specifies the nature of the stage, such as "power," "flow," or "pressure." This field informs the machine about the primary control mechanism or parameter of the stage, guiding the execution logic in adjusting machine settings accordingly.<a href="#section-3.2.8-1.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-3.2.8-1.4">
+              <p id="section-3.2.8-1.4.1"><strong>dynamics</strong>: An object detailing how the stage's primary parameter should vary over time or in response to other variables. It includes:<a href="#section-3.2.8-1.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.8-1.4.2.1">
+                  <p id="section-3.2.8-1.4.2.1.1"><strong>points</strong>: An array of tuples (pairs) specifying key values for the parameter over time or relative to another variable, forming a graph of desired outcomes.<a href="#section-3.2.8-1.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-3.2.8-1.4.2.2">
+                  <p id="section-3.2.8-1.4.2.2.1"><strong>over</strong>: Indicates the variable over which the dynamics are mapped (e.g., "piston_position," "time," "weight"), determining the x-axis of the dynamics graph.<a href="#section-3.2.8-1.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-3.2.8-1.4.2.3">
+                  <p id="section-3.2.8-1.4.2.3.1"><strong>interpolation</strong>: Specifies how the machine should transition between points (e.g., "linear," "curve," "spring"), affecting the smoothness and nature of the parameter's change over time.<a href="#section-3.2.8-1.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.2.8-1.5">
+              <p id="section-3.2.8-1.5.1"><strong>exit_triggers</strong>: An array of conditions that determine when the stage should end, transitioning to the next stage or concluding the brewing process. Each trigger includes:<a href="#section-3.2.8-1.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.8-1.5.2.1">
+                  <p id="section-3.2.8-1.5.2.1.1"><strong>type</strong>: The kind of condition to monitor (e.g., "weight," "pressure," "time"), directing the machine on what sensor feedback or internal timer to evaluate.<a href="#section-3.2.8-1.5.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-3.2.8-1.5.2.2">
+                  <p id="section-3.2.8-1.5.2.2.1"><strong>value</strong>: The specific threshold that activates the trigger, indicating when the stage's goal has been achieved or a certain limit has been reached.<a href="#section-3.2.8-1.5.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-3.2.8-1.5.2.3">
+                  <p id="section-3.2.8-1.5.2.3.1"><strong>relative</strong>: (Optional) A boolean indicating whether the trigger's value is relative to the start of the stage or absolute.<a href="#section-3.2.8-1.5.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-3.2.8-1.5.2.4">
+                  <p id="section-3.2.8-1.5.2.4.1"><strong>comparison</strong>: (Optional) Specifies whether the trigger activates when the monitored value is "greater" or "less" than the specified value, adding flexibility in defining exit conditions.<a href="#section-3.2.8-1.5.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.2.8-1.6">
+              <p id="section-3.2.8-1.6.1"><strong>limits</strong>: (Optional) Constraints applied to parameters within the stage to prevent exceeding the machine's capabilities or safety thresholds. Each limit specifies:<a href="#section-3.2.8-1.6.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.2.8-1.6.2.1">
+                  <p id="section-3.2.8-1.6.2.1.1"><strong>type</strong>: The parameter to constrain (e.g., "flow," "pressure"), ensuring that the stage does not push the machine beyond safe operational bounds.<a href="#section-3.2.8-1.6.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                <li class="normal" id="section-3.2.8-1.6.2.2">
+                  <p id="section-3.2.8-1.6.2.2.1"><strong>value</strong>: The maximum or minimum allowable value for the parameter, acting as a safeguard during the stage's execution.<a href="#section-3.2.8-1.6.2.2.1" class="pilcrow">¶</a></p>
+</li>
+              </ul>
+</li>
+          </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="execution-of-profiles">
+<section id="section-3.3">
+        <h3 id="name-execution-of-profiles">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-execution-of-profiles" class="section-name selfRef">Execution of Profiles</a>
+        </h3>
+<p id="section-3.3-1">Machines execute stages sequentially, adjusting output parameters with its accuators as defined in a stages dynamics until an exit trigger condition or the global final weight is met.
+For the execution of a profile the following steps are to be taken:<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-3.3-2">
+<li id="section-3.3-2.1">
+            <p id="section-3.3-2.1.1"><strong>Set Temperature</strong>: Adjusts water temperature to match the <code>temperature</code> field from the profile.<a href="#section-3.3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-3.3-2.2">
+            <p id="section-3.3-2.2.1"><strong>Select First Stage</strong>: Begins execution with the first stage outlined in the profile.<a href="#section-3.3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-3.3-2.3">
+            <p id="section-3.3-2.3.1"><strong>Log Stage Entry</strong>: Records key parameters (weight, flow, pressure, and time) upon entering a stage.<a href="#section-3.3-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-3.3-2.4">
+            <p id="section-3.3-2.4.1"><strong>Evaluate Exit Triggers</strong>: Checks if conditions to exit the current stage are met, based on defined <code>exitTriggers</code>. If the profile is not completed and another stage is next, it repeats from step 3.<a href="#section-3.3-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-3.3-2.5">
+            <p id="section-3.3-2.5.1"><strong>Interpolate Points</strong>: Calculates the current setpoint by interpolating points within the stage for the specified parameter (e.g., pressure, flow).<a href="#section-3.3-2.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-3.3-2.6">
+            <p id="section-3.3-2.6.1"><strong>Actuate Based on Stage Type</strong>: Activates the appropriate actuator (e.g., for pressure, flow) to adjust the machine towards the calculated setpoint.<a href="#section-3.3-2.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-3.3-2.7">
+            <p id="section-3.3-2.7.1"><strong>Apply Limiters</strong>: Ensures actuators do not exceed defined <code>limits</code> for parameters like flow or pressure.<a href="#section-3.3-2.7.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<p id="section-3.3-3">These steps are executed in a loop until the profile is completed, ensuring precise control over the brewing process according to the specified profile.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="future-extensions">
+<section id="section-4">
+      <h2 id="name-future-extensions">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-future-extensions" class="section-name selfRef">Future Extensions</a>
+      </h2>
+<p id="section-4-1">The evolution of the Open Espresso Profile Format (OEPF) aims to introduce greater flexibility and programmability to the coffee brewing process. Two significant enhancements are on the horizon:<a href="#section-4-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-4-2">
+<li id="section-4-2.1">
+          <p id="section-4-2.1.1"><strong>Integration of the BEANS Domain Specific Language</strong>: The incorporation of the BEANS Domain Specific Language (DSL), accessible at <a href="https://github.com/tyalie/BEANS-interpreter">BEANS Interpreter GitHub</a>, is poised to revolutionize the execution logic of brewing profiles. By enabling fully Turing-complete logic within the profiles, users will gain unprecedented control over the brewing process, allowing for complex decision-making, loops, and conditional operations tailored to the specificities of each individual shot.<a href="#section-4-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li id="section-4-2.2">
+          <p id="section-4-2.2.1"><strong>Enhanced Exit Triggers with 'target' Field</strong>: The proposal to enrich exit triggers with a "target" field introduces a dynamic flow control mechanism within the brewing profiles. Upon the activation of an exit trigger, the "target" field will specify the key of the next stage to execute, facilitating non-linear progression through the brewing stages. This enhancement allows for adaptive brewing sequences that can adjust in real-time to the coffee's extraction characteristics or external inputs.<a href="#section-4-2.2.1" class="pilcrow">¶</a></p>
+</li>
+      </ol>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-5">
+      <h2 id="name-security-considerations">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-5-1">TODO Security<a href="#section-5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-6">
+      <h2 id="name-iana-considerations">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-6-1">This document has no IANA actions.<a href="#section-6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="appendix-a-example-profile">
+<section id="section-7">
+      <h2 id="name-appendix-a-example-profile">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-appendix-a-example-profile" class="section-name selfRef">Appendix A: Example Profile</a>
+      </h2>
+<div class="breakable lang-json sourcecode" id="section-7-1">
+<pre>
+{
+    "name": "E61 with dropping pressure",
+    "id": "4cdc0015-07cd-4738-b198-c7d8742acd2b",
+    "author": "meticulous",
+    "author_id": "d9123a0a-d3d7-40fd-a548-b81376e43f23",
+    "previous_authors": [
+        {
+            "name": "mimoja",
+            "author_id": "d9123a0a-d3d7-40fd-a548-b81376e43f23",
+            "profile_id": "0cdf18ca-d72e-4776-8e25-7b3279907dce"
+        },
+        {
+            "name": "decentespresso",
+            "author_id": "ee86a777-fdd6-46d6-8cf7-099a9fb609a1",
+            "profile_id": "58036fd5-7d5b-4647-9ab6-2832014bb9be"
+        }
+    ],
+    "temperature": 92.5,
+    "final_weight": 40.0,
+    "variables": [
+        {
+            "name": "Pressure",
+            "key": "pressure_1",
+            "type": "pressure",
+            "value": 8
+        }
+    ],
+    "stages": [
+        {
+            "name": "Preinfusion",
+            "type": "flow",
+            "dynamics": {
+                "points": [
+                    [
+                        0,
+                        4
+                    ]
+                ],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {
+                    "type": "time",
+                    "value": 30,
+                    "relative": true,
+                    "comparison": "greater"
+                },
+                {
+                    "type": "weight",
+                    "value": 0.3,
+                    "relative": true,
+                    "comparison": "greater"
+                },
+                {
+                    "type": "pressure",
+                    "value": "$pressure_1",
+                    "relative": false,
+                    "comparison": "greater"
+                }
+            ],
+            "limits": []
+        },
+        {
+            "name": "Infusion",
+            "type": "pressure",
+            "temperature_delta": "-2.5",
+            "dynamics": {
+                "points": [
+                    [
+                        0,
+                        "$pressure_1"
+                    ]
+                ],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [],
+            "limits": [
+                {
+                    "type": "flow",
+                    "value": 3
+                }
+            ]
+        }
+    ]
+}
+</pre><a href="#section-7-1" class="pilcrow">¶</a>
+</div>
+<div id="appendix-b-json-schema-describing-the-oepd">
+<section id="section-7.1">
+        <h3 id="name-appendix-b-json-schema-desc">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-appendix-b-json-schema-desc" class="section-name selfRef">Appendix B: JSON Schema describing the OEPD</a>
+        </h3>
+<div class="breakable lang-json-schema sourcecode" id="section-7.1-1">
+<pre>
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "author": {
+            "type": "string"
+        },
+        "author_id": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "previous_authors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "author_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "profile_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "name",
+                    "author_id",
+                    "id"
+                ]
+            }
+        },
+        "temperature": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+        },
+        "final_weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2000
+        },
+        "variables": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "key": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "power",
+                            "flow",
+                            "pressure",
+                            "weight",
+                            "time",
+                            "piston_position"
+                        ]
+                    },
+                    "value": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "name",
+                    "key",
+                    "type",
+                    "value"
+                ]
+            }
+        },
+        "stages": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "key": {
+                        "type": "string"
+                    },
+                    "temperature_delta": {
+                        "type": "string",
+                        "minimum": -100,
+                        "maximum": 100
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "power",
+                            "flow",
+                            "pressure"
+                        ]
+                    },
+                    "dynamics": {
+                        "type": "object",
+                        "properties": {
+                            "points": {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2
+                                }
+                            },
+                            "over": {
+                                "type": "string",
+                                "enum": [
+                                    "piston_position",
+                                    "time",
+                                    "weight"
+                                ]
+                            },
+                            "interpolation": {
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "linear",
+                                    "curve",
+                                    "spring"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "points",
+                            "over",
+                            "interpolation"
+                        ]
+                    },
+                    "exit_triggers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "weight",
+                                        "pressure",
+                                        "flow",
+                                        "time",
+                                        "piston_position",
+                                        "power",
+                                        "user_interaction"
+                                    ]
+                                },
+                                "value": {
+                                    "type": "number"
+                                },
+                                "relative": {
+                                    "type": "boolean"
+                                },
+                                "comparison": {
+                                    "type": "string",
+                                    "enum": [
+                                        "greater",
+                                        "less"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "type",
+                                "value"
+                            ]
+                        }
+                    },
+                    "limits": {
+                        "type": "array",
+                        "optional": true,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "pressure",
+                                        "flow"
+                                    ]
+                                },
+                                "value": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": [
+                                "type",
+                                "value"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "key",
+                    "type",
+                    "dynamics",
+                    "exit_triggers"
+                ]
+            }
+        }
+    },
+    "required": [
+        "name",
+        "id",
+        "author",
+        "author_id",
+        "previous_authors",
+        "temperature",
+        "final_weight",
+        "variables",
+        "stages"
+    ]
+}
+</pre><a href="#section-7.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="sec-normative-references">
+<section id="section-8">
+      <h2 id="name-normative-references">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+    <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="acknowledgments">
+<section id="appendix-A">
+      <h2 id="name-acknowledgments">
+<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+      </h2>
+<p id="appendix-A-1">TODO acknowledge.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-B">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Johanna Schander</span></div>
+<div dir="auto" class="left"><span class="org">Meticulous</span></div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Nadja von Reitzenstein Čerpnjak (<span class="role">editor</span>)</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:me@dequbed.space" class="email">me@dequbed.space</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
